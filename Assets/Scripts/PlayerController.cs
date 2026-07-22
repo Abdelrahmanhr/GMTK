@@ -12,7 +12,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpCutOff = 0.5f; 
     [SerializeField] private float gravity = 3f; 
     [SerializeField] private float fallmultiplier = 2.5f; 
+    [SerializeField] private float coyoteTime = 0.15f;
 
+    private float coyoteTimeCounter;
     private bool isFalling; 
     private bool cutJump; 
     private bool isGrounded; 
@@ -23,18 +25,28 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>(); // Getting the Rigidbody2D component attached to the player
         controls = new PlayerControls(); // Creating new instance of PlayerControls
         controls.Enable();
-        rb.gravityScale = gravity; // Setting the gravity scale of the Rigidbody2D component to the value of the gravity variable
+        rb.gravityScale = gravity; 
     }
 
     // Update is called once per frame
     void Update()
     {
-        direction.x = controls.Gameplay.Movement.ReadValue<Vector2>().x; // Reading the movement input from the controls
-        if (controls.Gameplay.Jump.triggered && isGrounded) // Checking if the jump button is pressed and the player is grounded
+        
+        direction.x = controls.Gameplay.Movement.ReadValue<Vector2>().x; 
+        if (isGrounded)
         {
-            jumpPressed = true; // Setting the jump input to true when the jump button is pressed
+            coyoteTimeCounter = coyoteTime; 
         }
-        if (controls.Gameplay.Jump.WasReleasedThisFrame() && rb.linearVelocity.y > 0) // Checking if the jump button is released and the player is moving upwards
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime; 
+        }
+        if (controls.Gameplay.Jump.triggered && (isGrounded || coyoteTimeCounter > 0)) 
+        {
+            jumpPressed = true; 
+            coyoteTimeCounter = 0; 
+        }
+        if (controls.Gameplay.Jump.WasReleasedThisFrame() && rb.linearVelocity.y > 0) 
         {
             cutJump = true;
         
@@ -47,18 +59,18 @@ public class PlayerController : MonoBehaviour
         rb.linearVelocity = new Vector2(direction.x * speed, rb.linearVelocity.y); // Applying the movement to the Rigidbody2D component
         if (jumpPressed)
         {
-            rb.gravityScale = gravity ; // Resetting the gravity scale to the default value when the player jumps
+            rb.gravityScale = gravity ; 
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce); // Applying the jump force to the Rigidbody2D component
-            jumpPressed = false; // Resetting the jump input
+            jumpPressed = false; 
         }
         if (cutJump)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutOff); // Applying the jump cut-off to the Rigidbody2D component
-            cutJump = false; // Resetting the jump cut-off input
+            cutJump = false; 
         }
         if ( rb.linearVelocity.y < 0) // Checking if the player is falling
         {
-            rb.gravityScale = gravity * fallmultiplier; // Applying the fall multiplier to the Rigidbody2D component
+            rb.gravityScale = gravity * fallmultiplier; 
         }
     }
 
@@ -67,7 +79,7 @@ public class PlayerController : MonoBehaviour
         
         if (collision.gameObject.CompareTag("Ground"))
         {
-            isGrounded = true; // Setting the isGrounded variable to true when the player collides with the ground
+            isGrounded = true; 
         }
     }
 
@@ -75,7 +87,7 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
-            isGrounded = false; // Setting the isGrounded variable to false when the player exits collision with the ground
+            isGrounded = false; 
         }
     }
 }
